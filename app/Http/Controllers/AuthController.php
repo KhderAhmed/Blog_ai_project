@@ -12,64 +12,69 @@ class AuthController extends Controller
 {
     public function login()
     {
-        return view("auth.login");
+        return view('auth.login');
     }
+
     public function register()
     {
-        return view("auth.register");
+        return view('auth.register');
     }
-
-
 
     public function doLogin(Request $request)
     {
         $request->validate([
-            'name' => 'required',
-            'password' => 'required',
+            'name' => ['required', 'string'],
+            'password' => ['required', 'string'],
         ]);
 
-        $credentials = $request->only('name', 'password');
-        if (Auth::attempt($credentials)) {
-            return redirect()->intended('blog')
-                ->withSuccess('You have Successfully loggedin!!');
+        $loginValue = trim((string) $request->input('name'));
+        $credentials = ['password' => $request->input('password')];
+
+        if (filter_var($loginValue, FILTER_VALIDATE_EMAIL)) {
+            $credentials['email'] = $loginValue;
+        } else {
+            $credentials['name'] = $loginValue;
         }
 
-        return redirect("login")->withError('Oppes! Invalid credentials');
+        if (Auth::attempt($credentials)) {
+            return redirect()->intended('/blog')
+                ->withSuccess('You have successfully logged in!');
+        }
+
+        return redirect()->route('login')->withErrors([
+            'name' => 'Oppes! Invalid credentials',
+        ]);
     }
 
-    /**
-     * Write code on Method
-     *
-     * @return response()
-     */
     public function doRegistration(Request $request)
     {
         $request->validate([
-            'name' => 'required',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|min:6|max:8',
+            'name' => ['required', 'string', 'max:255', 'unique:users,name'],
+            'email' => ['required', 'email', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:8', 'max:255'],
         ]);
 
-        $data = $request->all();
-        $user = $this->create($data);
+        $user = $this->create($request->all());
 
         Auth::login($user);
 
-        return redirect("blog")->withSuccess('Great! You have Successfully loggedin');
+        return redirect()->intended('/blog')->withSuccess('Great! You have successfully logged in');
     }
+
     public function create(array $data)
     {
         return User::create([
             'name' => $data['name'],
             'email' => $data['email'],
-            'password' => Hash::make($data['password'])
+            'password' => Hash::make($data['password']),
         ]);
     }
+
     public function logout()
     {
         Session::flush();
         Auth::logout();
 
-        return Redirect('login');
+        return redirect()->route('login');
     }
 }

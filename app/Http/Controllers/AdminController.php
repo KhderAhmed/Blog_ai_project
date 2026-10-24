@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class AdminController extends Controller
 {
@@ -14,10 +14,13 @@ class AdminController extends Controller
 
     public function login(Request $request)
     {
-        $credentials = $request->only('email', 'password');
+        $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required', 'string'],
+        ]);
 
-        if (Auth::guard('admin')->attempt($credentials)) {
-            return redirect()->route('admin.dashboard');
+        if (Auth::guard('admin')->attempt($request->only('email', 'password'))) {
+            return redirect()->intended(route('admin.dashboard'));
         }
 
         return back()->withErrors(['error' => 'Invalid credentials']);
@@ -26,6 +29,7 @@ class AdminController extends Controller
     public function logout()
     {
         Auth::guard('admin')->logout();
+
         return redirect()->route('admin.login');
     }
 }

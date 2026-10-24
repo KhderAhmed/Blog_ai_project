@@ -11,11 +11,8 @@ class Category extends Model
 
     protected $fillable = ['name', 'slug'];
 
-    // علاقة الفئة بالمقالات
-   public function articles()
-{
-    return $this->hasMany(Article::class);
-}
-
-
+    public function articles()
+    {
+        return $this->hasMany(Article::class);
+    }
 }

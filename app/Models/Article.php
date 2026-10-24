@@ -10,19 +10,21 @@ class Article extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['title', 'content'];
+    protected $fillable = ['title', 'content', 'category_id', 'badge'];
+
     protected function readTime(): Attribute
     {
         return new Attribute(
             get: function () {
-
                 $text = strip_tags($this->content);
                 preg_match_all('/\p{L}+/u', $text, $matches);
                 $words = count($matches[0]);
-                return max(1, ceil($words / 200));
+
+                return max(1, (int) ceil($words / 200));
             }
         );
     }
+
     public function ratings()
     {
         return $this->hasMany(ArticleRatings::class);
@@ -46,10 +48,12 @@ class Article extends Model
             ->take(3)
             ->get();
     }
+
     public function category()
     {
         return $this->belongsTo(Category::class);
     }
+
     protected static function booted()
     {
         static::deleting(function ($article) {
