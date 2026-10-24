@@ -1,41 +1,38 @@
-<?php
+# 📝 Blog System
 
-namespace App\Models;
+A modern Laravel blog platform focused on article management, categories, ratings, bookmarks, admin flows, and PDF export.
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
+## Features
+- Article CRUD
+- Category management
+- User bookmarks and article views
+- Ratings and read-time logic
+- Admin authentication
+- Arabic-friendly content and PDF export
 
-class User extends Authenticatable
-{
-    use HasFactory, Notifiable;
+## Tech Stack
+- Laravel 12
+- Livewire
+- Tailwind CSS
+- SQLite
+- DomPDF
 
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
-    ];
+## Installation
+```bash
+git clone https://github.com/KhderAhmed/Blog_ai_project.git
+cd Blog_ai_project
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
+php artisan db:seed
+php artisan serve
+```
 
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+## Admin login
+Default admin account is created by the seeder:
+- Email: admin@example.com
+- Password: 12345678
 
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
-    }
-
-    public function bookmarks()
-    {
-        return $this->belongsToMany(Article::class, 'bookmarks');
-    }
-
-    public function views()
-    {
-        return $this->belongsToMany(Article::class, 'article_views')->withTimestamps();
-    }
-}
+## Notes
+This project is a strong starting point for a blog application, but it should still be hardened with tests and production-level checks before deployment.

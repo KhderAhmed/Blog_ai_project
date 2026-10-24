@@ -1,35 +1,32 @@
 <?php
 
-namespace App\Http\Controllers;
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BlogController;
+use App\Livewire\ArticleCrud;
+use Illuminate\Support\Facades\Route;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+Route::get('/', function () {
+    return view('welcome');
+});
 
-class AdminController extends Controller
-{
-    public function showLogin()
-    {
-        return view('admin.auth.login');
-    }
+Route::get('/login', [AuthController::class, 'login'])->name('login');
+Route::get('/register', [AuthController::class, 'register'])->name('register');
+Route::get('/blog', [BlogController::class, 'blog'])->name('blog');
+Route::view('/privacy', 'auth.privacy');
+Route::get('/blog/{id}', [BlogController::class, 'show'])->name('blog.show');
+Route::get('/blog/search', [BlogController::class, 'search'])->name('blog.search');
+Route::post('login', [AuthController::class, 'doLogin'])->name('do.login');
+Route::post('registration', [AuthController::class, 'doRegistration'])->name('do.register');
+Route::post('logout', [AuthController::class, 'logout'])->name('logout');
+Route::get('/blog/{id}/pdf', [BlogController::class, 'downloadPdf'])->name('blog.downloadPdf');
 
-    public function login(Request $request)
-    {
-        $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required', 'string'],
-        ]);
+Route::prefix('admin')->group(function () {
+    Route::get('login', [AdminController::class, 'showLogin'])->name('admin.login');
+    Route::post('login', [AdminController::class, 'login'])->name('admin.login');
 
-        if (Auth::guard('admin')->attempt($request->only('email', 'password'))) {
-            return redirect()->intended(route('admin.dashboard'));
-        }
-
-        return back()->withErrors(['error' => 'Invalid credentials']);
-    }
-
-    public function logout()
-    {
-        Auth::guard('admin')->logout();
-
-        return redirect()->route('admin.login');
-    }
-}
+    Route::middleware('admin')->group(function () {
+        Route::get('/dashboard', ArticleCrud::class)->name('admin.dashboard');
+        Route::post('logout', [AdminController::class, 'logout'])->name('admin.logout');
+    });
+});

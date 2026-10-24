@@ -1,32 +1,41 @@
 <?php
 
-use App\Http\Controllers\AdminController;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\BlogController;
-use App\Livewire\ArticleCrud;
-use Illuminate\Support\Facades\Route;
+namespace App\Models;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 
-Route::get('/login', [AuthController::class, 'login'])->name('login');
-Route::get('/register', [AuthController::class, 'register'])->name('register');
-Route::get('/blog', [BlogController::class, 'blog'])->name('blog');
-Route::view('/privacy', 'auth.privacy');
-Route::get('/blog/{id}', [BlogController::class, 'show'])->name('blog.show');
-Route::get('/blog/search', [BlogController::class, 'search'])->name('blog.search');
-Route::post('login', [AuthController::class, 'doLogin'])->name('do.login');
-Route::post('registration', [AuthController::class, 'doRegistration'])->name('do.register');
-Route::post('logout', [AuthController::class, 'logout'])->name('logout');
-Route::get('/blog/{id}/pdf', [BlogController::class, 'downloadPdf'])->name('blog.downloadPdf');
+class User extends Authenticatable
+{
+    use HasFactory, Notifiable;
 
-Route::prefix('admin')->group(function () {
-    Route::get('login', [AdminController::class, 'showLogin'])->name('admin.login');
-    Route::post('login', [AdminController::class, 'login'])->name('admin.login');
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+    ];
 
-    Route::middleware('admin')->group(function () {
-        Route::get('/dashboard', ArticleCrud::class)->name('admin.dashboard');
-        Route::post('logout', [AdminController::class, 'logout'])->name('admin.logout');
-    });
-});
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+        ];
+    }
+
+    public function bookmarks()
+    {
+        return $this->belongsToMany(Article::class, 'bookmarks');
+    }
+
+    public function views()
+    {
+        return $this->belongsToMany(Article::class, 'article_views')->withTimestamps();
+    }
+}
