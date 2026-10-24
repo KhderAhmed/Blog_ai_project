@@ -1,31 +1,29 @@
 <?php
 
-namespace App\Http\Controllers;
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\Request;
-
-class AdminController extends Controller
+return new class extends Migration
 {
-    public function showLogin()
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
     {
-        return view('admin.auth.login');
+        Schema::create('categories', function (Blueprint $table) {
+            $table->id();
+            $table->string('name')->unique();
+            $table->string('slug')->unique();
+            $table->timestamps();
+        });
     }
 
-    public function login(Request $request)
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
     {
-        $credentials = $request->only('email', 'password');
-
-        if (Auth::guard('admin')->attempt($credentials)) {
-            return redirect()->route('admin.dashboard');
-        }
-
-        return back()->withErrors(['error' => 'Invalid credentials']);
+        Schema::dropIfExists('categories');
     }
-
-    public function logout()
-    {
-        Auth::guard('admin')->logout();
-        return redirect()->route('admin.login');
-    }
-}
+};

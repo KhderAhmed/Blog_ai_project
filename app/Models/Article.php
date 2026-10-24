@@ -1,60 +1,80 @@
 <?php
 
-namespace App\Models;
+namespace App\Http\Controllers;
 
-use Illuminate\Database\Eloquent\Casts\Attribute;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Session;
 
-class Article extends Model
+class AuthController extends Controller
 {
-    use HasFactory;
-
-    protected $fillable = ['title', 'content'];
-    protected function readTime(): Attribute
+    public function login()
     {
-        return new Attribute(
-            get: function () {
-
-                $text = strip_tags($this->content);
-                preg_match_all('/\p{L}+/u', $text, $matches);
-                $words = count($matches[0]);
-                return max(1, ceil($words / 200));
-            }
-        );
-    }
-    public function ratings()
-    {
-        return $this->hasMany(ArticleRatings::class);
+        return view('auth.login');
     }
 
-    public function averageRating()
+    public function register()
     {
-        return $this->ratings()->avg('rating');
+        return view('auth.register');
     }
 
-    public function bookmarkedByUsers()
+    public function doLogin(Request $request)
     {
-        return $this->belongsToMany(User::class, 'bookmarks');
+        $request->validate([
+            'name' => ['required', 'string'],
+            'password' => ['required', 'string'],
+        ]);
+
+        $loginValue = trim((string) $request->input('name'));
+        $credentials = ['password' => $request->input('password')];
+
+        if (filter_var($loginValue, FILTER_VALIDATE_EMAIL)) {
+            $credentials['email'] = $loginValue;
+        } else {
+            $credentials['name'] = $loginValue;
+        }
+
+        if (Auth::attempt($credentials)) {
+            return redirect()->intended('/blog')
+                ->withSuccess('You have successfully logged in!');
+        }
+
+        return redirect()->route('login')->withErrors([
+            'name' => 'Oppes! Invalid credentials',
+        ]);
     }
 
-    public function related()
+    public function doRegistration(Request $request)
     {
-        return self::where('category_id', $this->category_id)
-            ->where('id', '!=', $this->id)
-            ->latest()
-            ->take(3)
-            ->get();
+        $request->validate([
+            'name' => ['required', 'string', 'max:255', 'unique:users,name'],
+            'email' => ['required', 'email', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:8', 'max:255'],
+        ]);
+
+        $user = $this->create($request->all());
+
+        Auth::login($user);
+
+        return redirect()->intended('/blog')->withSuccess('Great! You have successfully logged in');
     }
-    public function category()
+
+    public function create(array $data)
     {
-        return $this->belongsTo(Category::class);
+        return User::create([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'password' => Hash::make($data['password']),
+        ]);
     }
-    protected static function booted()
+
+    public function logout()
     {
-        static::deleting(function ($article) {
-            $article->ratings()->delete();
-            $article->bookmarkedByUsers()->detach();
-        });
+        Session::flush();
+        Auth::logout();
+
+        return redirect()->route('login');
     }
 }
